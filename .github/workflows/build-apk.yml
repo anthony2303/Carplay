@@ -34,12 +34,22 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
         packages: 'platforms;android-34 build-tools;34.0.0'
+    
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        gradle-version: 8.2
+    
+    - name: Generate Gradle Wrapper
+      run: gradle wrapper --gradle-version 8.2
+    
+    - name: Make gradlew executable
+      run: chmod +x gradlew
     
     - name: Cache Gradle packages
       uses: actions/cache@v3
@@ -51,29 +61,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     
-    - name: Make gradlew executable
-      run: chmod +x gradlew
-    
-    - name: Decode Keystore
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      env:
-        ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-      run: |
-        echo "$ENCODED_KEYSTORE" | base64 --decode > ${{ runner.temp }}/keystore.jks
-    
     - name: Build Debug APK
-      if: github.event.inputs.build_type == 'debug' || github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+      if: github.event.inputs.build_type == 'debug' || github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
       run: ./gradlew assembleDebug
     
     - name: Build Release APK
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      run: |
-        ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=${{ runner.temp }}/keystore.jks \
-          -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-          -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-          -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      run: ./gradlew assembleRelease
     
     - name: Upload Debug APK
       if: success()
@@ -90,49 +84,3 @@ jobs:
         name: ${{ env.APK_NAME }}-release
         path: app/build/outputs/apk/release/app-release.apk
         retention-days: 90
-    
-    - name: Create GitHub Release
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          app/build/outputs/apk/debug/app-debug.apk
-          app/build/outputs/apk/release/app-release.apk
-        name: Release ${{ github.ref_name }}
-        body: |
-          ## 🚗 CarPlay Clone App - Release ${{ github.ref_name }}
-          
-          ### 📱 Características incluidas:
-          - Interfaz tipo CarPlay
-          - Conexión Bluetooth A2DP
-          - Mirroring via WebRTC
-          - Control por voz
-          - Modo nocturno automático
-          - Integración con Google Maps
-          
-          ### 📥 Instalación:
-          1. Descargar el APK
-          2. Habilitar "Orígenes desconocidos"
-          3. Instalar y disfrutar
-          
-          ### 🔧 Configuración:
-          ```bash
-          # Conectar via ADB
-          adb install CarPlayClone-release.apk
-          ```
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Upload to Telegram
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        if [ ! -z "$TELEGRAM_BOT_TOKEN" ] && [ ! -z "$TELEGRAM_CHAT_ID" ]; then
-          curl -F "document=@app/build/outputs/apk/release/app-release.apk" \
-               -F "caption=🚗 CarPlay Clone App - ${{ github.ref_name }}" \
-               "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument?chat_id=$TELEGRAM_CHAT_ID"
-        fi
