@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt'
 }
 
 android {
@@ -14,51 +13,12 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0.0"
-        
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        
-        // Variables de build
-        buildConfigField "String", "MAPS_API_KEY", "\"${MAPS_API_KEY}\""
-        buildConfigField "String", "SIGNALING_SERVER_URL", "\"ws://192.168.1.100:8080\""
-        
-        // Soporte para múltiples ABIs
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-        }
-    }
-
-    signingConfigs {
-        release {
-            // Configurar para producción
-            storeFile file(System.getenv("KEYSTORE_FILE") ?: "debug.keystore")
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "android"
-            keyAlias System.getenv("KEY_ALIAS") ?: "androiddebugkey"
-            keyPassword System.getenv("KEY_PASSWORD") ?: "android"
-        }
     }
 
     buildTypes {
-        debug {
-            applicationIdSuffix ".debug"
-            versionNameSuffix "-debug"
-            minifyEnabled false
-            debuggable true
-            buildConfigField "boolean", "ENABLE_LOGGING", "true"
-        }
-        
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
-            buildConfigField "boolean", "ENABLE_LOGGING", "false"
-            
-            // Optimizaciones
-            debuggable false
-            jniDebuggable false
-            renderscriptDebuggable false
-            pseudoLocalesEnabled false
-            zipAlignEnabled true
         }
     }
     
@@ -73,81 +33,14 @@ android {
     
     buildFeatures {
         viewBinding true
-        buildConfig true
-        dataBinding true
-    }
-    
-    // Configuración de empaquetado
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-    
-    // Configuración de splits para APK (opcional)
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-            universalApk true
-        }
     }
 }
 
 dependencies {
-    // AndroidX Core
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    
-    // Material Design
     implementation 'com.google.android.material:material:1.11.0'
-    
-    // Fragments
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
-    
-    // Lifecycle
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
-    
-    // WebRTC
-    implementation 'io.webrtc:google-webrtc:1.0.32006'
-    
-    // Networking
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-    
-    // WebSocket
-    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
-    
-    // JSON
-    implementation 'com.google.code.gson:gson:2.10.1'
-    
-    // Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
-    
-    // Google Maps (opcional)
-    implementation 'com.google.android.gms:play-services-maps:18.2.0'
-    implementation 'com.google.android.gms:play-services-location:21.1.0'
-    
-    // Testing
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-}
-
-// Tarea para copiar APK a una ubicación específica (opcional)
-task copyAPK(type: Copy) {
-    from "${buildDir}/outputs/apk/debug/app-debug.apk"
-    into "${rootDir}/apk/"
-    rename { "CarPlayClone-${defaultConfig.versionName}.apk" }
-}
-
-afterEvaluate {
-    assembleDebug.finalizedBy(copyAPK)
+    implementation 'androidx.cardview:cardview:1.0.0'
 }
