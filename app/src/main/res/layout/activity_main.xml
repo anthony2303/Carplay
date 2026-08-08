@@ -173,7 +173,7 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="?attr=selectableItemBackground"
+            android:background="?attr/selectableItemBackground"
             android:padding="8dp">
 
             <ImageView
@@ -198,7 +198,7 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="?attr=selectableItemBackground"
+            android:background="?attr/selectableItemBackground"
             android:padding="8dp">
 
             <ImageView
