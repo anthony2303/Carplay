@@ -1,6 +1,7 @@
 package com.carplay.clone.services
 
 import android.content.Context
+import android.content.Intent
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.util.Log
@@ -27,7 +28,12 @@ class WebRTCService(private val context: Context) {
     private var localVideoTrack: VideoTrack? = null
     private var audioTrack: AudioTrack? = null
     private var mediaProjection: MediaProjection? = null
+    private var screenCaptureIntent: Intent? = null
     private var socket: Socket? = null
+    
+    fun setScreenCaptureIntent(intent: Intent) {
+        screenCaptureIntent = intent
+    }
     private var writer: PrintWriter? = null
     private var reader: BufferedReader? = null
     
@@ -176,20 +182,17 @@ class WebRTCService(private val context: Context) {
     }
     
     private fun createScreenCapturer(): VideoCapturer? {
-        val mediaProjectionManager = context.getSystemService(
-            Context.MEDIA_PROJECTION_SERVICE
-        ) as MediaProjectionManager
+        val intent = screenCaptureIntent
+        if (intent == null) {
+            Log.e(TAG, "No hay permiso de captura de pantalla (screenCaptureIntent es null)")
+            return null
+        }
         
-        // Aquí necesitarías un Intent para iniciar la captura de pantalla
         return ScreenCapturerAndroid(
-            DataChannel.Init().apply { ordered = true },
-            object : ScreenCapturerAndroid.CapturerObserver {
-                override fun onCapturerStarted(success: Boolean) {
-                    Log.d(TAG, "Captura iniciada: $success")
-                }
-                
-                override fun onCapturerStopped() {
-                    Log.d(TAG, "Captura detenida")
+            intent,
+            object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Log.d(TAG, "Captura de pantalla detenida")
                 }
             }
         )
